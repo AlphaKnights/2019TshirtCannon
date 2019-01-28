@@ -14,6 +14,8 @@ import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
 
+import edu.wpi.first.wpilibj.AnalogGyro;
+import edu.wpi.first.wpilibj.Compressor;
 import edu.wpi.first.wpilibj.Joystick;
 
 /**
@@ -33,10 +35,14 @@ public class Robot extends TimedRobot {
   private Solenoid Solenoid_6;
 
   private static final int kJoystickChannel = 0;
+  private static final int kGyroChannel = 0;
   private Joystick m_stick;
+  private AnalogGyro m_gyro;
 
   private Solenoid[] topSolonoids;
   private Solenoid[] bottomSolonoids;
+
+  private Compressor TestCompressor;
 
   @Override
   public void robotInit() {
@@ -55,6 +61,8 @@ public class Robot extends TimedRobot {
 
     topSolonoids = new Solenoid[] { Solenoid_1, Solenoid_2, Solenoid_3 };
     bottomSolonoids = new Solenoid[] { Solenoid_4, Solenoid_5, Solenoid_6 };
+    m_gyro = new AnalogGyro(kGyroChannel);
+    System.out.println("rgirhov");
   }
 
   @Override
@@ -71,9 +79,23 @@ public class Robot extends TimedRobot {
 
     double[] movementList = adjustJoystickInput(m_stick.getY(), m_stick.getX(), m_stick.getThrottle());
     m_myRobot.arcadeDrive(movementList[0], movementList[1]);
+    System.out.println(m_gyro.getAngle());
   }
 
-  private void fireCannon(Solenoid solonoidToFire, Joystick joystick, int secondaryButton) {
+  @Override
+  public void testInit() {
+    TestCompressor = new Compressor(0);
+    TestCompressor.setClosedLoopControl(true);
+
+  }
+
+  @Override
+  public void testPeriodic() {
+    System.out.print(String.format("Compressor Status: {0}", TestCompressor.getPressureSwitchValue()));
+    System.out.print(String.format("Compressor Status: {0}", TestCompressor.getCompressorCurrent()));
+  }
+
+  public void fireCannon(Solenoid solonoidToFire, Joystick joystick, int secondaryButton) {
     if (joystick.getRawButton(1) && joystick.getRawButton(secondaryButton)) {
       solonoidToFire.set(true);
     } else {
@@ -82,7 +104,7 @@ public class Robot extends TimedRobot {
   }
 
   private void fireTrio(Solenoid[] solonoidsToFire, Joystick joystick, int secondaryButton) {
-    if (joystick.getRawButton(1) && joystick.getRawButton(secondaryButton)) {
+    if (joystick.getRawButton(2) && joystick.getRawButton(secondaryButton)) {
       solonoidsToFire[0].set(true);
       solonoidsToFire[1].set(true);
       solonoidsToFire[2].set(true);
@@ -94,7 +116,7 @@ public class Robot extends TimedRobot {
   }
 
   private double[] adjustJoystickInput(double yPower, double zPower, double Throttle) {
-    double adjustedThrottle = ((-1 * (Throttle) + 1) / 2) + 0.1;
+    double adjustedThrottle = (((-1 * Throttle) + 1) / 2) + 0.1;
     double yPowerOut = yPower * adjustedThrottle;
     double zPowerOut = zPower * adjustedThrottle * 0.85;
 
@@ -102,3 +124,4 @@ public class Robot extends TimedRobot {
     return outputList;
   }
 }
+ 
