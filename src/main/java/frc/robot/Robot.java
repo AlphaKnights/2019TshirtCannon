@@ -19,8 +19,10 @@ import edu.wpi.first.wpilibj.Compressor;
 import edu.wpi.first.wpilibj.Joystick;
 
 /**
- * This is a demo program showing the use of the RobotDrive class, specifically
- * it contains the code necessary to operate a robot with tank drive.
+ * * This is the code for the T-Shirt Cannon. Works pretty good.
+ * 
+ * Basic info: Drives with logitech flight stick, air compressor with button 12,
+ * fire with triger, thumb button, and button 5/6 for top and bottom array.
  */
 public class Robot extends TimedRobot {
   private DifferentialDrive m_myRobot;
@@ -52,6 +54,8 @@ public class Robot extends TimedRobot {
     Solenoid_4 = new Solenoid(3);
     Solenoid_5 = new Solenoid(4);
     Solenoid_6 = new Solenoid(5);
+    TestCompressor = new Compressor(0);
+    TestCompressor.setClosedLoopControl(false);
 
     m_stick = new Joystick(kJoystickChannel);
 
@@ -67,17 +71,26 @@ public class Robot extends TimedRobot {
 
   @Override
   public void teleopPeriodic() {
-    //fireCannon(Solenoid_1, m_stick, 8);
-    //fireCannon(Solenoid_2, m_stick, 10);
-    //fireCannon(Solenoid_3, m_stick, 12);
-    //fireCannon(Solenoid_4, m_stick, 7);
-    //fireCannon(Solenoid_5, m_stick, 9);
-    //fireCannon(Solenoid_6, m_stick, 11);
+    //? Only run the compressor if button 12 is held
+    if (m_stick.getRawButton(12)){
+      TestCompressor.setClosedLoopControl(true);
+    } else {
+      TestCompressor.setClosedLoopControl(false);
+    }
+    //// fireCannon(Solenoid_1, m_stick, 8);
+    //// fireCannon(Solenoid_2, m_stick, 10);
+    //// fireCannon(Solenoid_3, m_stick, 12);
+    //// fireCannon(Solenoid_4, m_stick, 7);
+    //// fireCannon(Solenoid_5, m_stick, 9);
+    //// fireCannon(Solenoid_6, m_stick, 11);
 
+    // Logic to control trigering is inside
+    // TODO: Move the logic out here, makes more sense.
     fireTrio(topSolonoids, m_stick, 5);
     fireTrio(bottomSolonoids, m_stick, 6);
 
-    double[] movementList = adjustJoystickInput(m_stick.getY(), m_stick.getX(), m_stick.getThrottle());
+    // Make robit go
+    double[] movementList = adjustJoystickInput(-m_stick.getY(), m_stick.getX(), m_stick.getThrottle());
     m_myRobot.arcadeDrive(movementList[0], movementList[1]);
     System.out.println(m_gyro.getAngle());
   }
@@ -96,6 +109,7 @@ public class Robot extends TimedRobot {
   }
 
   public void fireCannon(Solenoid solonoidToFire, Joystick joystick, int secondaryButton) {
+    //! Obsolete, do not use. 
     if (joystick.getRawButton(1) && joystick.getRawButton(secondaryButton)) {
       solonoidToFire.set(true);
     } else {
@@ -104,6 +118,7 @@ public class Robot extends TimedRobot {
   }
 
   private void fireTrio(Solenoid[] solonoidsToFire, Joystick joystick, int secondaryButton) {
+    // Should be called every update loop, checks for butttons and may fire
     if (joystick.getRawButton(2) && joystick.getRawButton(secondaryButton)) {
       solonoidsToFire[0].set(true);
       solonoidsToFire[1].set(true);
@@ -116,7 +131,7 @@ public class Robot extends TimedRobot {
   }
 
   private double[] adjustJoystickInput(double yPower, double zPower, double Throttle) {
-    double adjustedThrottle = (((-1 * Throttle) + 1) / 2) + 0.1;
+    double adjustedThrottle = Math.sqrt(((-1 * Throttle) + 1) / 2); // Seems like a pretty good throttle curve
     double yPowerOut = yPower * adjustedThrottle;
     double zPowerOut = zPower * adjustedThrottle * 0.85;
 
