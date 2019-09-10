@@ -71,35 +71,48 @@ public class Robot extends TimedRobot {
 
   @Override
   public void teleopPeriodic() {
-    //? Only run the compressor if button 12 is held
-    if (m_stick.getRawButton(12)){
-      TestCompressor.setClosedLoopControl(true);
-    } else {
-      TestCompressor.setClosedLoopControl(false);
-    }
-    //// fireCannon(Solenoid_1, m_stick, 8);
-    //// fireCannon(Solenoid_2, m_stick, 10);
-    //// fireCannon(Solenoid_3, m_stick, 12);
-    //// fireCannon(Solenoid_4, m_stick, 7);
-    //// fireCannon(Solenoid_5, m_stick, 9);
-    //// fireCannon(Solenoid_6, m_stick, 11);
-
-    // Logic to control trigering is inside
-    // TODO: Move the logic out here, makes more sense.
-    fireTrio(topSolonoids, m_stick, 5);
-    fireTrio(bottomSolonoids, m_stick, 6);
+    private boolean isEnabled = false;
 
     // Make robit go
     double[] movementList = adjustJoystickInput(-m_stick.getY(), m_stick.getX(), m_stick.getThrottle());
+    //see adjustJoystickInput()
     m_myRobot.arcadeDrive(movementList[0], movementList[1]);
     System.out.println(m_gyro.getAngle());
+
+    //Toggle system for compresser: press 7,8,9,10 with 4 fingers on your left hand and pull trigger with right.
+    if (isEnabled == false && m_stick.getRawButton(7) && m_stick.getRawButton(8) && m_stick.getRawButton(9) && m_stick.getRawButton(10) && m_stick.getRawButton(1)) {
+      isEnabled = true;
+    } else if (isEnabled && m_stick.getRawButton(7) && m_stick.getRawButton(8) && m_stick.getRawButton(9) && m_stick.getRawButton(10) && m_stick.getRawButton(1)) {
+      isEnabled = false;
+    }
+    // Alternatively you can just hold 12 like the loser Jake thinks you are
+    if (isEnabled || m_stick.getRawButton(12)) {
+        testCompressor.setClosedLoopControl(true);
+    }
+
+
+    //// Firing logic stuff, most of it is obsolete, see fireCannon function
+    // fireCannon(Solenoid_1, m_stick, 8);
+    // fireCannon(Solenoid_2, m_stick, 10);
+    // fireCannon(Solenoid_3, m_stick, 12);
+    // fireCannon(Solenoid_4, m_stick, 7);
+    // fireCannon(Solenoid_5, m_stick, 9);
+    // fireCannon(Solenoid_6, m_stick, 11);
+
+
+    //? idk what these comments below are
+    // Logic to control trigering is inside
+    // TODO: Move the logic out here, makes more sense.
+    
+    //will fire top cannons with button 5 or bottom with button 6, see how below.
+    fireTrio(topSolonoids, m_stick, 5);
+    fireTrio(bottomSolonoids, m_stick, 6);
   }
 
   @Override
   public void testInit() {
     TestCompressor = new Compressor(0);
     TestCompressor.setClosedLoopControl(true);
-
   }
 
   @Override
@@ -108,18 +121,10 @@ public class Robot extends TimedRobot {
     System.out.print(String.format("Compressor Status: {0}", TestCompressor.getCompressorCurrent()));
   }
 
-  public void fireCannon(Solenoid solonoidToFire, Joystick joystick, int secondaryButton) {
-    //! Obsolete, do not use. 
-    if (joystick.getRawButton(1) && joystick.getRawButton(secondaryButton)) {
-      solonoidToFire.set(true);
-    } else {
-      solonoidToFire.set(false);
-    }
-  }
-
   private void fireTrio(Solenoid[] solonoidsToFire, Joystick joystick, int secondaryButton) {
-    // Should be called every update loop, checks for butttons and may fire
-    if (joystick.getRawButton(2) && joystick.getRawButton(secondaryButton)) {
+    // Should be called every update loop, checks for trigger(1), thumb button(2), and secondaryButton is called earlier in the code,
+    // and it can be either 5 or 6.  Requires 2 hands to realistically launch it, for safety.
+    if (joystick.getRawButton(1) && joystick.getRawButton(2) && joystick.getRawButton(secondaryButton)) {
       solonoidsToFire[0].set(true);
       solonoidsToFire[1].set(true);
       solonoidsToFire[2].set(true);
@@ -130,13 +135,33 @@ public class Robot extends TimedRobot {
     }
   }
 
-  private double[] adjustJoystickInput(double yPower, double zPower, double Throttle) {
-    double adjustedThrottle = Math.sqrt(((-1 * Throttle) + 1) / 2); // Seems like a pretty good throttle curve
-    double yPowerOut = yPower * adjustedThrottle;
-    double zPowerOut = zPower * adjustedThrottle * 0.85;
+  //? movementList[] wants to have 2 values stored in it as a matrix, but is dependant on 3 variables, which are the y and z power, and throttle
+  //? This function, when you set movementList to it and call the 3 variables, will calculate y and z power for the moters
+  //? and set the matrix to the correct values that can be used in arcadeDrive().
 
+  private double[] adjustJoystickInput(double yPower, double zPower, double Throttle) {
+    // Makes the throttle work on a sqrt curve as to make controlling easier.
+    double adjustedThrottle = Math.sqrt(((-1 * Throttle) + 1) / 2); 
+    double yPowerOut = yPower * adjustedThrottle;
+    double zPowerOut = zPower * adjustedThrottle * 0.85;   
+    //sets movementList[] values to y and z power, as object 1 and 2 in the matrix respectively   
     double[] outputList = new double[] { yPowerOut, zPowerOut };
     return outputList;
   }
+
+  
+/*
+  //! Obsolete, do not use. 
+  //! This used to fire single cannons, but we rewired pneumatics so that doesn't exist anymore.
+
+  public void fireCannon(Solenoid solonoidToFire, Joystick joystick, int secondaryButton) {
+    if (joystick.getRawButton(1) && joystick.getRawButton(secondaryButton)) {
+      solonoidToFire.set(true);
+    } else {
+      solonoidToFire.set(false);
+    }
+  }
+
+*/
 }
  
